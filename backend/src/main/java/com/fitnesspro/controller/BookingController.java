@@ -24,6 +24,10 @@ public class BookingController {
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public List<BookingDto> all() { return bookings.all(); }
 
+    @GetMapping("/schedule/{scheduleId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER','TRAINER')")
+    public List<BookingDto> bySchedule(@PathVariable Long scheduleId) { return bookings.bySchedule(scheduleId, auth.currentUser()); }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('CLIENT')")
     public List<BookingDto> my() { return bookings.my(auth.currentUser()); }

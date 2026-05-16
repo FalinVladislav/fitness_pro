@@ -33,19 +33,23 @@ public class ScheduleController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
-    public ScheduleDto create(@Valid @RequestBody ScheduleRequest request) { return schedules.save(null, request); }
+    public ScheduleDto create(@Valid @RequestBody ScheduleRequest request) { return schedules.save(null, request, auth.currentUser()); }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
-    public ScheduleDto update(@PathVariable Long id, @Valid @RequestBody ScheduleRequest request) { return schedules.save(id, request); }
+    public ScheduleDto update(@PathVariable Long id, @Valid @RequestBody ScheduleRequest request) { return schedules.save(id, request, auth.currentUser()); }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
-    public void delete(@PathVariable Long id) { schedules.delete(id); }
+    public void delete(@PathVariable Long id) { schedules.delete(id, auth.currentUser()); }
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
-    public void cancel(@PathVariable Long id) { schedules.cancel(id); }
+    public void cancel(@PathVariable Long id) { schedules.cancel(id, auth.currentUser()); }
+
+    @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
+    public ScheduleDto complete(@PathVariable Long id) { return schedules.complete(id, auth.currentUser()); }
 
     @GetMapping("/trainer/{trainerId}")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','TRAINER')")

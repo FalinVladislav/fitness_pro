@@ -31,7 +31,15 @@ public class VisitController {
     @PreAuthorize("hasRole('CLIENT')")
     public List<VisitDto> my() { return visits.my(auth.currentUser().getEmail()); }
 
+    @GetMapping("/trainer/my")
+    @PreAuthorize("hasRole('TRAINER')")
+    public List<VisitDto> trainerVisits() { return visits.byTrainer(auth.currentUser().getEmail()); }
+
     @PostMapping("/check-in")
     @PreAuthorize("hasAnyRole('ADMIN','TRAINER')")
-    public VisitDto checkIn(@Valid @RequestBody CheckInRequest request) { return visits.checkIn(request); }
+    public VisitDto checkIn(@Valid @RequestBody CheckInRequest request) { return visits.checkIn(request, auth.currentUser()); }
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void cancel(@PathVariable Long id) { visits.cancel(id); }
 }

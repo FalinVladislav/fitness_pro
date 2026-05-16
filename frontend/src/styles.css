@@ -43,8 +43,13 @@ main { padding: 28px; }
 .heroPanel, .card { background: var(--surface); border: 1px solid white; border-radius: 30px; padding: 24px; box-shadow: 0 20px 60px #3b332433; backdrop-filter: blur(16px); }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.grid3.compact { align-items: start; }
 .stack { display: grid; gap: 18px; }
 .inline { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.inline-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.filters { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-top: 12px; }
+.pill { display: inline-flex; width: fit-content; border-radius: 999px; padding: 6px 10px; background: #dcfce7; color: #166534 !important; font-weight: 800; }
+.pill.muted { background: #f1f5f9; color: #475569 !important; }
 .list, .schedule { display: grid; gap: 12px; margin-top: 16px; }
 .list article, .schedule article { display: grid; gap: 6px; padding: 16px; border: 1px solid var(--line); border-left: 5px solid var(--green); border-radius: 18px; background: white; }
 .list span, .schedule span { color: var(--muted); font-size: 14px; }
@@ -52,10 +57,13 @@ main { padding: 28px; }
 .metric article b { font-size: 44px; color: var(--accent); }
 .unread { background: #fff7ed !important; }
 .center { display: grid; place-items: center; min-height: 100vh; }
+.ghost.light { color: var(--ink); border-color: var(--line); background: #ffffffcc; }
+.danger { background: #dc2626; color: white; }
 
 @media (max-width: 900px) {
   .shell { grid-template-columns: 1fr; }
   aside { position: static; }
   .hero, .grid2, .grid3 { grid-template-columns: 1fr; }
+  .filters { grid-template-columns: 1fr; }
   main { padding: 18px; }
 }

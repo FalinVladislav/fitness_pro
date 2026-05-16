@@ -35,7 +35,7 @@ public class CatalogService {
     public List<MembershipTypeDto> membershipTypes() { return membershipTypes.findAll().stream().map(mapper::membershipType).toList(); }
     public List<HallDto> halls() { return halls.findAll().stream().map(mapper::hall).toList(); }
     public List<TrainingTypeDto> trainingTypes() { return trainingTypes.findAll().stream().map(mapper::trainingType).toList(); }
-    public List<TrainerDto> trainers() { return trainers.findAll().stream().map(mapper::trainer).toList(); }
+    public List<TrainerDto> trainers() { return trainers.findAll().stream().filter(t -> t.getUser().isEnabled()).map(mapper::trainer).toList(); }
 
     @Transactional
     public MembershipTypeDto saveMembershipType(Long id, MembershipTypeRequest r) {
@@ -46,6 +46,8 @@ public class CatalogService {
         t.setPrice(r.price());
         t.setDescription(r.description());
         t.setActive(r.active());
+        t.setFreezeAllowed(r.freezeAllowed());
+        t.setMaxFreezeDays(r.maxFreezeDays() == null ? 0 : r.maxFreezeDays());
         return mapper.membershipType(membershipTypes.save(t));
     }
 
@@ -85,6 +87,7 @@ public class CatalogService {
         users.save(user);
         trainer.setUser(user);
         trainer.setSpecialization(r.specialization());
+        trainer.setYearsOfExperience(r.yearsOfExperience() == null ? 0 : r.yearsOfExperience());
         trainer.setDescription(r.description());
         return mapper.trainer(trainers.save(trainer));
     }
@@ -92,4 +95,9 @@ public class CatalogService {
     public void deleteMembershipType(Long id) { membershipTypes.deleteById(id); }
     public void deleteHall(Long id) { halls.deleteById(id); }
     public void deleteTrainingType(Long id) { trainingTypes.deleteById(id); }
+    @Transactional
+    public void deleteTrainer(Long id) {
+        Trainer trainer = trainers.findById(id).orElseThrow(() -> ApiException.notFound("Тренер не найден"));
+        trainer.getUser().setEnabled(false);
+    }
 }

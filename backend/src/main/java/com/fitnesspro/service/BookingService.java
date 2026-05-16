@@ -38,6 +38,14 @@ public class BookingService {
         return bookings.findAll().stream().map(mapper::booking).toList();
     }
 
+    public List<BookingDto> bySchedule(Long scheduleId, User currentUser) {
+        Schedule schedule = scheduleService.schedule(scheduleId);
+        if (currentUser.getRole() == Role.TRAINER && !schedule.getTrainer().getUser().getId().equals(currentUser.getId())) {
+            throw ApiException.forbidden("Тренер видит участников только своих занятий");
+        }
+        return bookings.findBySchedule(schedule).stream().map(mapper::booking).toList();
+    }
+
     public List<BookingDto> my(User user) {
         Client client = clients.findByUserEmail(user.getEmail()).orElseThrow(() -> ApiException.forbidden("Профиль клиента не найден"));
         return bookings.findByClientOrderByBookingDateTimeDesc(client).stream().map(mapper::booking).toList();
@@ -59,6 +67,18 @@ public class BookingService {
         long booked = bookings.countByScheduleAndStatus(schedule, BookingStatus.ACTIVE);
         if (booked >= schedule.getParticipantLimit()) {
             throw ApiException.badRequest("На занятии нет свободных мест");
+        }
+        var existing = bookings.findByClientAndSchedule(client, schedule);
+        if (existing.isPresent()) {
+            Booking booking = existing.get();
+            booking.setStatus(BookingStatus.ACTIVE);
+            booking.setBookingDateTime(LocalDateTime.now());
+            notifications.notify(client.getUser(), "Запись восстановлена",
+                    "Вы снова записаны на " + schedule.getTrainingType().getName() + " " + schedule.getDate() + " в " + schedule.getStartTime(),
+                    NotificationType.BOOKING);
+            notifications.notify(schedule.getTrainer().getUser(), "Запись восстановлена",
+                    client.getUser().getFullName() + " снова записался на ваше занятие.", NotificationType.BOOKING);
+            return mapper.booking(booking);
         }
         Booking booking = new Booking();
         booking.setClient(client);
@@ -85,6 +105,10 @@ public class BookingService {
             throw ApiException.badRequest("Отмена уже недоступна: до занятия осталось слишком мало времени");
         }
         booking.setStatus(BookingStatus.CANCELLED);
+        notifications.notify(booking.getClient().getUser(), "Запись отменена",
+                "Запись на " + booking.getSchedule().getTrainingType().getName() + " "
+                        + booking.getSchedule().getDate() + " в " + booking.getSchedule().getStartTime() + " отменена.",
+                NotificationType.BOOKING);
         notifications.notify(booking.getSchedule().getTrainer().getUser(), "Отмена записи",
                 booking.getClient().getUser().getFullName() + " отменил запись.", NotificationType.BOOKING);
     }

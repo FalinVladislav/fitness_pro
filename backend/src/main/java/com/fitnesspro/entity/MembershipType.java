@@ -24,4 +24,8 @@ public class MembershipType {
     private String description;
     @Column(nullable = false)
     private boolean active = true;
+    @Column(nullable = false)
+    private boolean freezeAllowed = false;
+    @Column(nullable = false)
+    private Integer maxFreezeDays = 0;
 }

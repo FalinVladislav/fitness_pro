@@ -25,6 +25,41 @@ export type MembershipType = {
   price: number;
   description?: string;
   active: boolean;
+  freezeAllowed: boolean;
+  maxFreezeDays: number;
+};
+
+export type Membership = {
+  id: number;
+  clientId: number;
+  clientName: string;
+  membershipTypeId: number;
+  typeName: string;
+  purchaseDate: string;
+  activationDate: string;
+  expirationDate: string;
+  remainingVisits?: number;
+  status: 'ACTIVE' | 'EXPIRED' | 'FROZEN' | 'CANCELLED' | 'DEPLETED';
+  freezeAllowed: boolean;
+  maxFreezeDays: number;
+  usedFreezeDays: number;
+};
+
+export type MembershipFreeze = {
+  id: number;
+  membershipId: number;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  status: 'ACTIVE' | 'FINISHED' | 'CANCELLED';
+};
+
+export type Trainer = {
+  id: number;
+  user: User;
+  specialization?: string;
+  yearsOfExperience: number;
+  description?: string;
 };
 
 export type Schedule = {
@@ -39,7 +74,41 @@ export type Schedule = {
   startTime: string;
   endTime: string;
   participantLimit: number;
-  status: string;
+  status: 'PLANNED' | 'COMPLETED' | 'CANCELLED';
   bookedCount: number;
   trainerComment?: string;
+};
+
+export type NotificationChannel = 'IN_APP' | 'EMAIL' | 'SMS' | 'PUSH';
+export type NotificationDeliveryStatus = 'SCHEDULED' | 'SENT' | 'FAILED';
+
+export type Notification = {
+  id: number;
+  title: string;
+  message: string;
+  type: 'BOOKING' | 'SCHEDULE' | 'MEMBERSHIP' | 'SYSTEM';
+  channel: NotificationChannel;
+  deliveryStatus: NotificationDeliveryStatus;
+  readStatus: boolean;
+  createdAt: string;
+  sentAt?: string;
+};
+
+export type PurchaseRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+export type MembershipPurchaseRequest = {
+  id: number;
+  clientId: number;
+  clientName: string;
+  membershipTypeId: number;
+  membershipTypeName: string;
+  price: number;
+  createdAt: string;
+  desiredActivationDate?: string;
+  comment?: string;
+  status: PurchaseRequestStatus;
+  decidedAt?: string;
+  decisionBy?: string;
+  decisionComment?: string;
+  createdMembershipId?: number;
 };

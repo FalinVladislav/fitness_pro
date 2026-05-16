@@ -1,0 +1,34 @@
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment / local config
+.env
+.env.*
+!.env.example
+backend/src/main/resources/application-local.yml
+
+# Java / Maven
+backend/target/
+target/
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+frontend/dist-check/
+frontend/.vite/
+
+# Temporary files
+*.tmp
+*.temp

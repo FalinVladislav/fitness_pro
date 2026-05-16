@@ -17,6 +17,9 @@ public class Trainer {
 
     private String specialization;
 
+    @Column(nullable = false)
+    private Integer yearsOfExperience = 0;
+
     @Column(length = 1000)
     private String description;
 }

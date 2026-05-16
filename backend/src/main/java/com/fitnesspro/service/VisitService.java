@@ -43,23 +43,72 @@ public class VisitService {
         return visits.findByClientOrderByVisitTimeDesc(client).stream().map(mapper::visit).toList();
     }
 
+    public List<VisitDto> byTrainer(String email) {
+        return visits.findByScheduleTrainerUserEmailOrderByVisitTimeDesc(email).stream().map(mapper::visit).toList();
+    }
+
     @Transactional
-    public VisitDto checkIn(CheckInRequest request) {
+    public VisitDto checkIn(CheckInRequest request, User currentUser) {
         Client client = clients.findById(request.clientId()).orElseThrow(() -> ApiException.notFound("Клиент не найден"));
-        Membership membership = membershipService.activeFor(client);
-        Schedule schedule = request.scheduleId() == null ? null : schedules.findById(request.scheduleId()).orElseThrow(() -> ApiException.notFound("Занятие не найдено"));
-        membershipService.chargeVisit(membership);
+        Schedule schedule = resolveSchedule(request.scheduleId(), currentUser);
+        VisitType type = resolveType(request.visitType(), schedule);
+
+        Membership membership = null;
+        if (type != VisitType.ONE_TIME) {
+            membership = membershipService.activeFor(client);
+            membershipService.chargeVisit(membership);
+        }
 
         Visit visit = new Visit();
         visit.setClient(client);
         visit.setMembership(membership);
         visit.setSchedule(schedule);
-        visit.setVisitType(schedule == null ? VisitType.GYM : VisitType.GROUP_TRAINING);
+        visit.setVisitType(type);
         visits.save(visit);
 
         if (schedule != null) {
             bookings.findByClientAndSchedule(client, schedule).ifPresent(b -> b.setStatus(BookingStatus.ATTENDED));
         }
         return mapper.visit(visit);
+    }
+
+    @Transactional
+    public void cancel(Long id) {
+        Visit visit = visits.findById(id).orElseThrow(() -> ApiException.notFound("Посещение не найдено"));
+        membershipService.restoreVisit(visit.getMembership());
+        if (visit.getSchedule() != null) {
+            bookings.findByClientAndSchedule(visit.getClient(), visit.getSchedule()).ifPresent(b -> b.setStatus(BookingStatus.ACTIVE));
+        }
+        visits.delete(visit);
+    }
+
+    private VisitType resolveType(VisitType requested, Schedule schedule) {
+        if (schedule != null) {
+            return VisitType.GROUP_TRAINING;
+        }
+        if (requested == VisitType.ONE_TIME) {
+            return VisitType.ONE_TIME;
+        }
+        return VisitType.GYM;
+    }
+
+    private Schedule resolveSchedule(Long scheduleId, User currentUser) {
+        if (currentUser.getRole() == Role.ADMIN) {
+            if (scheduleId != null) {
+                throw ApiException.forbidden("Администратор отмечает только посещение зала, групповые тренировки отмечает тренер");
+            }
+            return null;
+        }
+        if (currentUser.getRole() == Role.TRAINER) {
+            if (scheduleId == null) {
+                throw ApiException.badRequest("Для отметки тренером нужно выбрать занятие");
+            }
+            Schedule schedule = schedules.findById(scheduleId).orElseThrow(() -> ApiException.notFound("Занятие не найдено"));
+            if (!schedule.getTrainer().getUser().getId().equals(currentUser.getId())) {
+                throw ApiException.forbidden("Тренер может отмечать посещения только на своих занятиях");
+            }
+            return schedule;
+        }
+        throw ApiException.forbidden("Недостаточно прав для отметки посещения");
     }
 }

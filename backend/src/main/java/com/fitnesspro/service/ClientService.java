@@ -62,6 +62,11 @@ public class ClientService {
     public ClientDto update(Long id, ClientRequest request) {
         Client client = client(id);
         User user = client.getUser();
+        users.findByEmail(request.email()).ifPresent(existing -> {
+            if (!existing.getId().equals(user.getId())) {
+                throw ApiException.badRequest("Email уже занят");
+            }
+        });
         user.setFullName(request.fullName());
         user.setEmail(request.email());
         user.setPhone(request.phone());

@@ -1,5 +1,7 @@
 package com.fitnesspro.entity;
 
+import com.fitnesspro.entity.Enums.NotificationChannel;
+import com.fitnesspro.entity.Enums.NotificationDeliveryStatus;
 import com.fitnesspro.entity.Enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -23,8 +25,15 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationType type;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationChannel channel = NotificationChannel.IN_APP;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationDeliveryStatus deliveryStatus = NotificationDeliveryStatus.SCHEDULED;
     @Column(nullable = false)
     private boolean readStatus = false;
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime sentAt;
 }

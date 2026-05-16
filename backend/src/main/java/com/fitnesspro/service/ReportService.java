@@ -2,6 +2,7 @@ package com.fitnesspro.service;
 
 import com.fitnesspro.dto.Dto.ReportValue;
 import com.fitnesspro.entity.Enums.BookingStatus;
+import com.fitnesspro.entity.Enums.ScheduleStatus;
 import com.fitnesspro.repository.*;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ public class ReportService {
 
     public List<ReportValue> popularTrainingTypes(LocalDate from, LocalDate to) {
         return schedules.findByDateBetweenOrderByDateAscStartTimeAsc(defaultFrom(from), defaultTo(to)).stream()
+                .filter(s -> s.getStatus() != ScheduleStatus.CANCELLED)
                 .collect(Collectors.groupingBy(s -> s.getTrainingType().getName(),
                         Collectors.summingLong(s -> bookings.countByScheduleAndStatus(s, BookingStatus.ACTIVE)
                                 + bookings.countByScheduleAndStatus(s, BookingStatus.ATTENDED))))
@@ -46,6 +48,7 @@ public class ReportService {
 
     public List<ReportValue> trainersLoad(LocalDate from, LocalDate to) {
         Map<String, Long> load = schedules.findByDateBetweenOrderByDateAscStartTimeAsc(defaultFrom(from), defaultTo(to)).stream()
+                .filter(s -> s.getStatus() == ScheduleStatus.COMPLETED)
                 .collect(Collectors.groupingBy(s -> s.getTrainer().getUser().getFullName(), Collectors.counting()));
         return load.entrySet().stream().map(e -> new ReportValue(e.getKey(), e.getValue())).toList();
     }

@@ -9,5 +9,6 @@ import java.util.List;
 
 public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByClientOrderByVisitTimeDesc(Client client);
+    List<Visit> findByScheduleTrainerUserEmailOrderByVisitTimeDesc(String email);
     long countByVisitTimeBetween(LocalDateTime from, LocalDateTime to);
 }

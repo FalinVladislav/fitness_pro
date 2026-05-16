@@ -15,7 +15,7 @@ cd docker
 docker compose up -d
 ```
 
-База будет доступна на `localhost:5432`, БД `fitness_pro`, пользователь `fitness`, пароль `fitness`.
+База будет доступна на `localhost:5433`, БД `fitness_pro`, пользователь `fitness`, пароль `fitness`.
 
 ## Запуск backend
 
@@ -55,13 +55,17 @@ Frontend будет доступен на `http://localhost:5173`.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
 - `GET|POST|PUT|DELETE /api/clients`
 - `GET|POST|PUT|DELETE /api/membership-types`
-- `GET /api/memberships`, `POST /api/memberships/sell`, `POST /api/memberships/{id}/renew`
-- `GET|POST|PUT|DELETE /api/schedule`, `POST /api/schedule/{id}/cancel`
-- `GET /api/bookings`, `GET /api/bookings/my`, `POST /api/bookings`, `POST /api/bookings/{id}/cancel`
-- `GET /api/visits`, `POST /api/visits/check-in`
+- `GET /api/memberships`, `POST /api/memberships/sell`, `POST /api/memberships/buy`, `POST /api/memberships/{id}/renew`
+- `GET|POST|PUT|DELETE /api/schedule`, `POST /api/schedule/{id}/cancel`, `POST /api/schedule/{id}/complete`
+- `GET /api/bookings`, `GET /api/bookings/my`, `GET /api/bookings/schedule/{scheduleId}`, `POST /api/bookings`, `POST /api/bookings/{id}/cancel`
+- `GET /api/visits`, `GET /api/visits/trainer/my`, `POST /api/visits/check-in`, `POST /api/visits/{id}/cancel`
 - `GET /api/reports/revenue`, `GET /api/reports/attendance`, `GET /api/reports/trainers-load`, `GET /api/reports/popular-training-types`
 - `GET /api/notifications`, `POST /api/notifications/{id}/read`
 
 ## Бизнес-правила
 
-Система проверяет активность и срок абонемента, остаток посещений, свободные места на занятии, повторную запись, конфликты тренера и зала, сроки отмены записи и автоматически отменяет активные записи при отмене занятия.
+Система проверяет активность и срок абонемента, остаток посещений, свободные места на занятии, повторную запись после отмены, конфликты тренера и зала, сроки отмены записи и автоматически отменяет активные записи при отмене занятия.
+
+## Подготовка к публикации
+
+В репозиторий должны попадать исходники, конфиги, `pom.xml`, `package.json`, `package-lock.json`, Docker Compose и документация. Локальные артефакты сборки (`target`, `dist`, `node_modules`) и настройки IDE исключены через `.gitignore`.

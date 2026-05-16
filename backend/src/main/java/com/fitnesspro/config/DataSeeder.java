@@ -38,6 +38,7 @@ public class DataSeeder {
             Trainer trainer = new Trainer();
             trainer.setUser(trainerUser);
             trainer.setSpecialization("Силовой тренинг, функциональные тренировки");
+            trainer.setYearsOfExperience(8);
             trainer.setDescription("Тренер с опытом 8 лет, ведет групповые и персональные занятия.");
             trainers.save(trainer);
 
@@ -46,6 +47,7 @@ public class DataSeeder {
             Trainer trainer2 = new Trainer();
             trainer2.setUser(trainerUser2);
             trainer2.setSpecialization("Йога, пилатес");
+            trainer2.setYearsOfExperience(5);
             trainer2.setDescription("Специалист по мягкому фитнесу и восстановлению.");
             trainers.save(trainer2);
 
@@ -57,8 +59,8 @@ public class DataSeeder {
             client.setBirthDate(LocalDate.of(2001, 5, 14));
             clients.save(client);
 
-            MembershipType monthly = membershipType("Месяц безлимит", 30, null, "Безлимитное посещение клуба на 30 дней", new BigDecimal("3500"));
-            MembershipType visits = membershipType("8 тренировок", 45, 8, "Лимитированный абонемент на групповые тренировки", new BigDecimal("2800"));
+            MembershipType monthly = membershipType("Месяц безлимит", 30, null, "Безлимитное посещение клуба на 30 дней", new BigDecimal("3500"), true, 14);
+            MembershipType visits = membershipType("8 тренировок", 45, 8, "Лимитированный абонемент на групповые тренировки", new BigDecimal("2800"), false, 0);
             membershipTypes.save(monthly);
             membershipTypes.save(visits);
 
@@ -103,7 +105,8 @@ public class DataSeeder {
         return user;
     }
 
-    private MembershipType membershipType(String name, int days, Integer visits, String description, BigDecimal price) {
+    private MembershipType membershipType(String name, int days, Integer visits, String description, BigDecimal price,
+                                          boolean freezeAllowed, int maxFreezeDays) {
         MembershipType type = new MembershipType();
         type.setName(name);
         type.setDurationDays(days);
@@ -111,6 +114,8 @@ public class DataSeeder {
         type.setDescription(description);
         type.setPrice(price);
         type.setActive(true);
+        type.setFreezeAllowed(freezeAllowed);
+        type.setMaxFreezeDays(maxFreezeDays);
         return type;
     }
 

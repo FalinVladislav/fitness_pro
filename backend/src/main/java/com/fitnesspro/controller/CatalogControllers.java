@@ -57,5 +57,6 @@ public final class CatalogControllers {
         @GetMapping public List<TrainerDto> list() { return catalog.trainers(); }
         @PostMapping @PreAuthorize("hasRole('ADMIN')") public TrainerDto create(@Valid @RequestBody TrainerRequest r) { return catalog.saveTrainer(null, r); }
         @PutMapping("/{id}") @PreAuthorize("hasRole('ADMIN')") public TrainerDto update(@PathVariable Long id, @Valid @RequestBody TrainerRequest r) { return catalog.saveTrainer(id, r); }
+        @DeleteMapping("/{id}") @PreAuthorize("hasRole('ADMIN')") public void delete(@PathVariable Long id) { catalog.deleteTrainer(id); }
     }
 }
