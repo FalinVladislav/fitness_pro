@@ -11,4 +11,6 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByClientOrderByVisitTimeDesc(Client client);
     List<Visit> findByScheduleTrainerUserEmailOrderByVisitTimeDesc(String email);
     long countByVisitTimeBetween(LocalDateTime from, LocalDateTime to);
+    boolean existsByClientAndSchedule(Client client, com.fitnesspro.entity.Schedule schedule);
+    boolean existsByClientAndScheduleIsNullAndVisitTimeBetween(Client client, LocalDateTime from, LocalDateTime to);
 }

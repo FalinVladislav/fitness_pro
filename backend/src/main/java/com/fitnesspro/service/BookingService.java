@@ -55,8 +55,12 @@ public class BookingService {
     public BookingDto create(BookingRequest request, User currentUser) {
         Client client = resolveClient(request.clientId(), currentUser);
         Schedule schedule = scheduleService.schedule(request.scheduleId());
-        if (schedule.getStatus() == ScheduleStatus.CANCELLED) {
-            throw ApiException.badRequest("Нельзя записаться на отмененную тренировку");
+        if (schedule.getStatus() != ScheduleStatus.PLANNED) {
+            throw ApiException.badRequest("Записаться можно только на запланированную тренировку");
+        }
+        LocalDateTime start = LocalDateTime.of(schedule.getDate(), schedule.getStartTime());
+        if (!start.isAfter(LocalDateTime.now())) {
+            throw ApiException.badRequest("Нельзя записаться на уже начавшуюся или прошедшую тренировку");
         }
         membershipService.activeFor(client);
         bookings.findByClientAndSchedule(client, schedule).ifPresent(existing -> {
@@ -69,7 +73,7 @@ public class BookingService {
             throw ApiException.badRequest("На занятии нет свободных мест");
         }
         var existing = bookings.findByClientAndSchedule(client, schedule);
-        if (existing.isPresent()) {
+        if (existing.isPresent() && existing.get().getStatus() == BookingStatus.CANCELLED) {
             Booking booking = existing.get();
             booking.setStatus(BookingStatus.ACTIVE);
             booking.setBookingDateTime(LocalDateTime.now());
@@ -79,6 +83,9 @@ public class BookingService {
             notifications.notify(schedule.getTrainer().getUser(), "Запись восстановлена",
                     client.getUser().getFullName() + " снова записался на ваше занятие.", NotificationType.BOOKING);
             return mapper.booking(booking);
+        }
+        if (existing.isPresent()) {
+            throw ApiException.badRequest("Запись на это занятие уже была обработана и не может быть восстановлена");
         }
         Booking booking = new Booking();
         booking.setClient(client);

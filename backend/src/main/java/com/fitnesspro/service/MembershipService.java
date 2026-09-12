@@ -5,6 +5,7 @@ import com.fitnesspro.entity.*;
 import com.fitnesspro.entity.Enums.*;
 import com.fitnesspro.exception.ApiException;
 import com.fitnesspro.repository.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,18 +36,22 @@ public class MembershipService {
         this.mapper = mapper;
     }
 
+    @Transactional
     public List<MembershipDto> all() {
         refreshExpired();
         return memberships.findAll().stream().map(mapper::membership).toList();
     }
 
+    @Transactional
     public List<MembershipDto> byClient(Long clientId) {
         refreshExpired();
         Client client = client(clientId);
         return memberships.findByClientOrderByActivationDateDesc(client).stream().map(mapper::membership).toList();
     }
 
+    @Transactional
     public List<MembershipDto> byCurrentClient(User user) {
+        refreshExpired();
         Client client = clients.findByUserEmail(user.getEmail()).orElseThrow(() -> ApiException.forbidden("Профиль клиента не найден"));
         return memberships.findByClientOrderByActivationDateDesc(client).stream().map(mapper::membership).toList();
     }
@@ -115,8 +120,9 @@ public class MembershipService {
         return created;
     }
 
+    @Transactional
     public MembershipDto status(Long id) {
-        refresh(membership(id));
+        refreshExpired();
         return mapper.membership(membership(id));
     }
 
@@ -135,6 +141,7 @@ public class MembershipService {
 
     @Transactional
     public MembershipFreezeDto freeze(Long id, FreezeMembershipRequest request) {
+        refreshExpired();
         Membership m = membership(id);
         MembershipType type = m.getMembershipType();
         if (!type.isFreezeAllowed()) {
@@ -152,6 +159,12 @@ public class MembershipService {
         if (request.endDate().isAfter(m.getExpirationDate())) {
             throw ApiException.badRequest("Заморозка выходит за срок действия абонемента");
         }
+        boolean hasPendingFreeze = freezes.findByMembershipOrderByStartDateDesc(m).stream()
+                .anyMatch(f -> f.getStatus() == MembershipFreezeStatus.SCHEDULED
+                        || f.getStatus() == MembershipFreezeStatus.ACTIVE);
+        if (hasPendingFreeze) {
+            throw ApiException.badRequest("У абонемента уже есть запланированная или активная заморозка");
+        }
         int requested = (int) ChronoUnit.DAYS.between(request.startDate(), request.endDate()) + 1;
         int alreadyUsed = freezes.totalFrozenDays(m);
         if (type.getMaxFreezeDays() != null && type.getMaxFreezeDays() > 0
@@ -164,21 +177,35 @@ public class MembershipService {
         freeze.setStartDate(request.startDate());
         freeze.setEndDate(request.endDate());
         freeze.setReason(request.reason());
-        freeze.setStatus(MembershipFreezeStatus.ACTIVE);
+        freeze.setStatus(request.startDate().isEqual(LocalDate.now())
+                ? MembershipFreezeStatus.ACTIVE
+                : MembershipFreezeStatus.SCHEDULED);
         freezes.save(freeze);
 
-        m.setStatus(MembershipStatus.FROZEN);
-        m.setExpirationDate(m.getExpirationDate().plusDays(requested));
+        if (freeze.getStatus() == MembershipFreezeStatus.ACTIVE) {
+            activateFreeze(freeze);
+        } else {
+            notifications.notify(m.getClient().getUser(), "Заморозка абонемента запланирована",
+                    "Абонемент \"" + type.getName() + "\" будет заморожен с " + request.startDate() + " по " + request.endDate() + ".",
+                    NotificationType.MEMBERSHIP);
+        }
 
-        notifications.notify(m.getClient().getUser(), "Абонемент заморожен",
-                "Абонемент \"" + type.getName() + "\" заморожен с " + request.startDate() + " по " + request.endDate() + ".",
-                NotificationType.MEMBERSHIP);
         return mapper.freeze(freeze);
     }
 
     @Transactional
     public MembershipFreezeDto unfreeze(Long id) {
+        refreshExpired();
         Membership m = membership(id);
+        MembershipFreeze scheduled = freezes.findFirstByMembershipAndStatus(m, MembershipFreezeStatus.SCHEDULED)
+                .orElse(null);
+        if (scheduled != null) {
+            scheduled.setStatus(MembershipFreezeStatus.CANCELLED);
+            notifications.notify(m.getClient().getUser(), "Запланированная заморозка отменена",
+                    "Заморозка абонемента \"" + m.getMembershipType().getName() + "\" не начнётся.",
+                    NotificationType.MEMBERSHIP);
+            return mapper.freeze(scheduled);
+        }
         MembershipFreeze active = freezes.findFirstByMembershipAndStatus(m, MembershipFreezeStatus.ACTIVE)
                 .orElseThrow(() -> ApiException.badRequest("У абонемента нет активной заморозки"));
         LocalDate today = LocalDate.now();
@@ -274,9 +301,49 @@ public class MembershipService {
                 && (m.getRemainingVisits() == null || m.getRemainingVisits() > 0);
     }
 
+    @Scheduled(cron = "${app.membership.lifecycle-cron:0 5 0 * * *}")
     @Transactional
-    public void refreshExpired() {
+    public void runLifecycleMaintenance() {
+        refreshExpired();
+    }
+
+    private void refreshExpired() {
+        LocalDate today = LocalDate.now();
+        freezes.findByStatus(MembershipFreezeStatus.SCHEDULED).stream()
+                .filter(freeze -> !freeze.getStartDate().isAfter(today))
+                .forEach(this::activateFreeze);
+        freezes.findByStatus(MembershipFreezeStatus.ACTIVE).stream()
+                .filter(freeze -> freeze.getEndDate().isBefore(today))
+                .forEach(this::finishFreeze);
         memberships.findByStatus(MembershipStatus.ACTIVE).forEach(this::refresh);
+    }
+
+    private void activateFreeze(MembershipFreeze freeze) {
+        if (freeze.getStatus() == MembershipFreezeStatus.SCHEDULED) {
+            freeze.setStatus(MembershipFreezeStatus.ACTIVE);
+        }
+        Membership membership = freeze.getMembership();
+        if (membership.getStatus() != MembershipStatus.ACTIVE) {
+            return;
+        }
+        int days = (int) ChronoUnit.DAYS.between(freeze.getStartDate(), freeze.getEndDate()) + 1;
+        membership.setStatus(MembershipStatus.FROZEN);
+        membership.setExpirationDate(membership.getExpirationDate().plusDays(days));
+        notifications.notify(membership.getClient().getUser(), "Заморозка началась",
+                "Абонемент \"" + membership.getMembershipType().getName() + "\" заморожен до " + freeze.getEndDate() + ".",
+                NotificationType.MEMBERSHIP);
+    }
+
+    private void finishFreeze(MembershipFreeze freeze) {
+        freeze.setStatus(MembershipFreezeStatus.FINISHED);
+        Membership membership = freeze.getMembership();
+        if (membership.getStatus() == MembershipStatus.FROZEN) {
+            membership.setStatus(MembershipStatus.ACTIVE);
+            refresh(membership);
+            notifications.notify(membership.getClient().getUser(), "Заморозка завершена",
+                    "Абонемент \"" + membership.getMembershipType().getName() + "\" снова активен.",
+                    NotificationType.MEMBERSHIP);
+        }
     }
 
     private void refresh(Membership m) {

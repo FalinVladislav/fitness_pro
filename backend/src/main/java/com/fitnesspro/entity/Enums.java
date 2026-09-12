@@ -14,6 +14,6 @@ public final class Enums {
     public enum NotificationDeliveryStatus { SCHEDULED, SENT, FAILED }
     public enum PaymentMethod { CASH, CARD, ONLINE }
     public enum SaleStatus { PAID, CANCELLED, REFUNDED }
-    public enum MembershipFreezeStatus { ACTIVE, FINISHED, CANCELLED }
+    public enum MembershipFreezeStatus { SCHEDULED, ACTIVE, FINISHED, CANCELLED }
     public enum PurchaseRequestStatus { PENDING, APPROVED, REJECTED, CANCELLED }
 }

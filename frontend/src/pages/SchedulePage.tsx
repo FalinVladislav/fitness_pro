@@ -70,8 +70,13 @@ export function SchedulePage() {
           <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}><option value="">Любой статус</option><option value="PLANNED">Запланировано</option><option value="COMPLETED">Проведено</option><option value="CANCELLED">Отменено</option></select>
         </div>
         <div className="schedule">{filtered.map((s) => {
-          const myBooking = bookingBySchedule.get(s.id);
-          const canBook = user?.role === 'CLIENT' && s.status === 'PLANNED' && myBooking?.status !== 'ACTIVE' && s.bookedCount < s.participantLimit;
+           const myBooking = bookingBySchedule.get(s.id);
+           const now = new Date();
+           const startsAt = new Date(`${s.date}T${s.startTime}`);
+           const endsAt = new Date(`${s.date}T${s.endTime}`);
+           const canBook = user?.role === 'CLIENT' && s.status === 'PLANNED' && startsAt > now
+             && myBooking?.status !== 'ACTIVE' && s.bookedCount < s.participantLimit;
+           const canComplete = canEdit && s.status === 'PLANNED' && endsAt <= now;
           return (
           <article key={s.id} style={{ borderColor: s.status === 'CANCELLED' ? '#ef4444' : '#f97316' }}>
             <b>{s.trainingTypeName}</b><span>{s.date} · {s.startTime}-{s.endTime} · {s.trainerName}</span>
@@ -82,7 +87,7 @@ export function SchedulePage() {
             {canEdit && s.status !== 'COMPLETED' && s.status !== 'CANCELLED' && (
               <button className="ghost" onClick={() => api.post(`/schedule/${s.id}/cancel`).then(load)}>Отменить</button>
             )}
-            {canEdit && s.status === 'PLANNED' && (
+            {canComplete && (
               <button type="button" onClick={() => api.post(`/schedule/${s.id}/complete`).then(load).catch((err) => setMessage(errorMessage(err)))}>Отметить как проведённое</button>
             )}
           </article>

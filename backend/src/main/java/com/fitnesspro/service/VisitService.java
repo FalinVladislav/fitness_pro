@@ -8,6 +8,8 @@ import com.fitnesspro.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -52,6 +54,7 @@ public class VisitService {
         Client client = clients.findById(request.clientId()).orElseThrow(() -> ApiException.notFound("Клиент не найден"));
         Schedule schedule = resolveSchedule(request.scheduleId(), currentUser);
         VisitType type = resolveType(request.visitType(), schedule);
+        ensureCanCheckIn(client, schedule);
 
         Membership membership = null;
         if (type != VisitType.ONE_TIME) {
@@ -110,5 +113,34 @@ public class VisitService {
             return schedule;
         }
         throw ApiException.forbidden("Недостаточно прав для отметки посещения");
+    }
+
+    private void ensureCanCheckIn(Client client, Schedule schedule) {
+        LocalDateTime now = LocalDateTime.now();
+        if (schedule != null) {
+            if (schedule.getStatus() != ScheduleStatus.PLANNED) {
+                throw ApiException.badRequest("Посещение можно отметить только для запланированного занятия");
+            }
+            LocalDateTime start = LocalDateTime.of(schedule.getDate(), schedule.getStartTime());
+            LocalDateTime end = LocalDateTime.of(schedule.getDate(), schedule.getEndTime());
+            if (now.isBefore(start) || !now.isBefore(end)) {
+                throw ApiException.badRequest("Посещение можно отметить только во время занятия");
+            }
+            Booking booking = bookings.findByClientAndSchedule(client, schedule)
+                    .orElseThrow(() -> ApiException.badRequest("Клиент не записан на это занятие"));
+            if (booking.getStatus() != BookingStatus.ACTIVE) {
+                throw ApiException.badRequest("У клиента нет активной записи на это занятие");
+            }
+            if (visits.existsByClientAndSchedule(client, schedule)) {
+                throw ApiException.badRequest("Посещение этого занятия уже отмечено");
+            }
+            return;
+        }
+
+        LocalDateTime dayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime nextDayStart = dayStart.plusDays(1);
+        if (visits.existsByClientAndScheduleIsNullAndVisitTimeBetween(client, dayStart, nextDayStart)) {
+            throw ApiException.badRequest("Посещение зала уже отмечено сегодня");
+        }
     }
 }

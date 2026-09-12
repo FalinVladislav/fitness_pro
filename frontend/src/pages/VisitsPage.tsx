@@ -81,6 +81,10 @@ export function VisitsPage() {
     (!filters.q || `${v.clientName} ${v.membershipId ?? ''} ${v.scheduleId ?? ''}`.toLowerCase().includes(filters.q.toLowerCase()))
     && (!filters.type || v.visitType === filters.type)
   );
+  const selectedSchedule = schedules.find((schedule) => schedule.id === Number(scheduleId));
+  const canCheckInSelectedSchedule = selectedSchedule?.status === 'PLANNED'
+    && new Date(`${selectedSchedule.date}T${selectedSchedule.startTime}`) <= new Date()
+    && new Date() < new Date(`${selectedSchedule.date}T${selectedSchedule.endTime}`);
 
   return (
     <section className="grid2">
@@ -118,7 +122,7 @@ export function VisitsPage() {
               <article key={b.id}>
                 <b>{b.clientName}</b>
                 <span>{b.schedule.trainingTypeName} · запись активна</span>
-                <button type="button" onClick={() => trainerCheckIn(b)}>Отметить пришедшим</button>
+                <button type="button" disabled={!canCheckInSelectedSchedule} onClick={() => trainerCheckIn(b)}>Отметить пришедшим</button>
               </article>
             ))}
             {scheduleId && bookings.filter((b) => b.status === 'ACTIVE').length === 0 && <article><span>Активных записей на это занятие нет.</span></article>}

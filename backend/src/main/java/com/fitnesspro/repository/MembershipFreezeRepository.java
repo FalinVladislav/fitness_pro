@@ -11,10 +11,11 @@ import java.util.Optional;
 public interface MembershipFreezeRepository extends JpaRepository<MembershipFreeze, Long> {
     List<MembershipFreeze> findByMembershipOrderByStartDateDesc(Membership membership);
     Optional<MembershipFreeze> findFirstByMembershipAndStatus(Membership membership, MembershipFreezeStatus status);
+    List<MembershipFreeze> findByStatus(MembershipFreezeStatus status);
 
     default int totalFrozenDays(Membership membership) {
         return findByMembershipOrderByStartDateDesc(membership).stream()
-                .filter(f -> f.getStatus() != MembershipFreezeStatus.CANCELLED)
+                .filter(f -> f.getStatus() == MembershipFreezeStatus.FINISHED)
                 .mapToInt(f -> (int) (f.getEndDate().toEpochDay() - f.getStartDate().toEpochDay()) + 1)
                 .sum();
     }

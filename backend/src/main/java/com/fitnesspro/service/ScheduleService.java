@@ -57,6 +57,9 @@ public class ScheduleService {
     @Transactional
     public ScheduleDto save(Long id, ScheduleRequest r, User currentUser) {
         Schedule s = id == null ? new Schedule() : schedule(id);
+        if (id != null && s.getStatus() != ScheduleStatus.PLANNED) {
+            throw ApiException.badRequest("Нельзя изменять отменённое или проведённое занятие");
+        }
         String previous = id == null ? null : describe(s);
         TrainingType type = trainingTypes.findById(r.trainingTypeId()).orElseThrow(() -> ApiException.notFound("Тип тренировки не найден"));
         Trainer trainer = resolveTrainer(r.trainerId(), currentUser);
@@ -125,8 +128,8 @@ public class ScheduleService {
         if (s.getStatus() == ScheduleStatus.COMPLETED) {
             throw ApiException.badRequest("Занятие уже отмечено как проведённое");
         }
-        if (LocalDateTime.of(s.getDate(), s.getStartTime()).isAfter(LocalDateTime.now())) {
-            throw ApiException.badRequest("Нельзя завершить занятие до его начала");
+        if (LocalDateTime.of(s.getDate(), s.getEndTime()).isAfter(LocalDateTime.now())) {
+            throw ApiException.badRequest("Нельзя завершить занятие до времени его окончания");
         }
         s.setStatus(ScheduleStatus.COMPLETED);
         // помечаем активные брони как NO_SHOW (не пришли). ATTENDED уже выставлены в VisitService.

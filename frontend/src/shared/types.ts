@@ -51,7 +51,7 @@ export type MembershipFreeze = {
   startDate: string;
   endDate: string;
   reason?: string;
-  status: 'ACTIVE' | 'FINISHED' | 'CANCELLED';
+  status: 'SCHEDULED' | 'ACTIVE' | 'FINISHED' | 'CANCELLED';
 };
 
 export type Trainer = {
