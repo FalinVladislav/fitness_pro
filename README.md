@@ -26,6 +26,17 @@ mvn spring-boot:run
 
 Backend стартует на `http://localhost:8080`. При первом запуске Hibernate создаст таблицы, а `DataSeeder` добавит тестовые данные.
 
+## Документация API (Swagger)
+
+После запуска backend интерактивная документация доступна по адресу:
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+OpenAPI-спецификация доступна по адресу `http://localhost:8080/v3/api-docs`.
+Чтобы проверить защищенные запросы в Swagger UI, выполните `POST /api/auth/login`, скопируйте поле `token` из ответа, нажмите **Authorize** и вставьте JWT.
+
 ## Запуск frontend
 
 ```bash

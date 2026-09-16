@@ -3,6 +3,7 @@ package com.fitnesspro.controller;
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.AuthService;
 import com.fitnesspro.service.ScheduleService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/schedule")
+@Tag(name = "Schedule", description = "Training schedule management")
 public class ScheduleController {
     private final ScheduleService schedules;
     private final AuthService auth;

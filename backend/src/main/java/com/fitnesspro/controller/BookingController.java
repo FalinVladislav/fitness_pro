@@ -3,6 +3,7 @@ package com.fitnesspro.controller;
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.AuthService;
 import com.fitnesspro.service.BookingService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
+@Tag(name = "Bookings", description = "Class bookings and cancellations")
 public class BookingController {
     private final BookingService bookings;
     private final AuthService auth;

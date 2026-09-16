@@ -3,6 +3,7 @@ package com.fitnesspro.controller;
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.AuthService;
 import com.fitnesspro.service.MembershipService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/memberships")
+@Tag(name = "Memberships", description = "Membership purchase, renewal, cancellation and freezes")
 public class MembershipController {
     private final MembershipService memberships;
     private final AuthService auth;

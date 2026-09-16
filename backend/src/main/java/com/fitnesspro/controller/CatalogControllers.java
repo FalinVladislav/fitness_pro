@@ -2,6 +2,7 @@ package com.fitnesspro.controller;
 
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.CatalogService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ public final class CatalogControllers {
 
     @RestController
     @RequestMapping("/api/membership-types")
+    @Tag(name = "Catalog: membership types")
     public static class MembershipTypeController {
         private final CatalogService catalog;
         public MembershipTypeController(CatalogService catalog) { this.catalog = catalog; }
@@ -26,6 +28,7 @@ public final class CatalogControllers {
 
     @RestController
     @RequestMapping("/api/halls")
+    @Tag(name = "Catalog: halls")
     public static class HallController {
         private final CatalogService catalog;
         public HallController(CatalogService catalog) { this.catalog = catalog; }
@@ -38,6 +41,7 @@ public final class CatalogControllers {
 
     @RestController
     @RequestMapping("/api/training-types")
+    @Tag(name = "Catalog: training types")
     public static class TrainingTypeController {
         private final CatalogService catalog;
         public TrainingTypeController(CatalogService catalog) { this.catalog = catalog; }
@@ -50,6 +54,7 @@ public final class CatalogControllers {
 
     @RestController
     @RequestMapping("/api/trainers")
+    @Tag(name = "Catalog: trainers")
     public static class TrainerController {
         private final CatalogService catalog;
         public TrainerController(CatalogService catalog) { this.catalog = catalog; }

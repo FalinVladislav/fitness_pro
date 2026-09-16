@@ -2,6 +2,7 @@ package com.fitnesspro.controller;
 
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.VisitService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/visits")
+@Tag(name = "Visits", description = "Check-in and visit history")
 public class VisitController {
     private final VisitService visits;
     private final com.fitnesspro.service.AuthService auth;

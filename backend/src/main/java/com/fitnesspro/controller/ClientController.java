@@ -2,6 +2,7 @@ package com.fitnesspro.controller;
 
 import com.fitnesspro.dto.Dto.*;
 import com.fitnesspro.service.ClientService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
+@Tag(name = "Clients", description = "Client management")
 public class ClientController {
     private final ClientService clients;
 

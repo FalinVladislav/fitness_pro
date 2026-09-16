@@ -30,12 +30,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtService.isValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails details = userDetailsService.loadUserByUsername(jwtService.subject(token));
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                if (jwtService.isValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UserDetails details = userDetailsService.loadUserByUsername(jwtService.subject(token));
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            } catch (RuntimeException ex) {
+                // An invalid token or a deleted user is treated as an unauthenticated request.
+                SecurityContextHolder.clearContext();
             }
         }
         chain.doFilter(request, response);
