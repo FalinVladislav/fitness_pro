@@ -1,13 +1,10 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: fitness-pro-postgres
     environment:
       POSTGRES_DB: fitness_pro
       POSTGRES_USER: fitness
-      POSTGRES_PASSWORD: fitness
-    ports:
-      - "5433:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in docker/.env}
     volumes:
       - fitness_pro_pg:/var/lib/postgresql/data
     healthcheck:
@@ -15,6 +12,34 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      DB_URL: jdbc:postgresql://postgres:5432/fitness_pro
+      DB_USERNAME: fitness
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in docker/.env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in docker/.env}
+      SERVER_PORT: 8080
+      # A clean Docker database executes V1. A database created before Flyway
+      # is marked as version 1 only when its schema is already non-empty.
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+      SPRING_FLYWAY_BASELINE_VERSION: "1"
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_HOST_PORT:-5173}:80"
 
 volumes:
   fitness_pro_pg:

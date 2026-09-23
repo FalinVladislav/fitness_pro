@@ -8,23 +8,44 @@
 - Frontend: React, TypeScript, React Router, Axios, Vite.
 - База данных: PostgreSQL, реляционная модель по предметной области фитнес-центра.
 
-## Запуск PostgreSQL
+## PostgreSQL
 
-```bash
+Для запуска нужно выбрать профиль Spring Boot. При локальной разработке используется профиль `local`: он подключается к `localhost:5432`, БД `fitness_pro`, пользователю `postgres` и паролю `admin`. Значения можно переопределить переменными `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` и `JWT_SECRET`.
+
+## Полный запуск в Docker
+
+Docker Compose поднимает PostgreSQL, Spring Boot backend и React frontend одной командой. Перед первым запуском создайте файл `docker/.env` из шаблона и задайте собственный JWT-секрет и пароль БД. Файл с реальными значениями игнорируется Git.
+
+```powershell
 cd docker
-docker compose up -d
+Copy-Item .env.example .env
+docker compose up --build
 ```
 
-База будет доступна на `localhost:5433`, БД `fitness_pro`, пользователь `fitness`, пароль `fitness`.
+После запуска откройте:
+
+- frontend: `http://localhost:5173`;
+- Swagger UI: `http://localhost:5173/swagger-ui/index.html`.
+
+Профиль `demo` создаёт тестовых пользователей. Для запуска без демо-данных установите в `docker/.env` значение `SPRING_PROFILES_ACTIVE=prod-like`. Backend и PostgreSQL доступны только внутри сети Compose; Nginx передаёт backend-запросы по путям `/api` и `/swagger-ui`. Поэтому запуск не конфликтует с локальными backend и PostgreSQL.
+
+В Compose включён `baseline-on-migrate` на версии `1`: чистая Docker-БД применит `V1__init_schema.sql`, а старая Docker-БД с уже существующей схемой версии 1 получит запись baseline без повторного создания таблиц. Это относится только к Docker dev-окружению; для локальной PostgreSQL baseline выполняется отдельно, как описано ниже.
+
+Команда `docker compose down` остановит контейнеры и сохранит Docker-базу. `docker compose down -v` дополнительно удалит Docker volume с данными; локальная PostgreSQL на `localhost:5432` при этом не затрагивается.
 
 ## Запуск backend
 
 ```bash
 cd backend
+$env:SPRING_PROFILES_ACTIVE = "local"
 mvn spring-boot:run
 ```
 
-Backend стартует на `http://localhost:8080`. При первом запуске Hibernate создаст таблицы, а `DataSeeder` добавит тестовые данные.
+Backend стартует на `http://localhost:8080`. На чистой БД Flyway применит `V1__init_schema.sql` и создаст таблицы. Hibernate работает в режиме `validate`: он только проверяет соответствие схемы Java entity и не изменяет её.
+
+Если локальная БД уже была создана прежним режимом `ddl-auto: update`, перед первым запуском с Flyway нужно один раз выполнить Flyway baseline на версии `1`; существующие таблицы и данные при этом не изменяются.
+
+Тестовые данные создаёт `DataSeeder` только в профилях `local` и `demo`. Профили `test` и `prod-like` требуют отдельную БД и переменные окружения; они не содержат fallback-паролей, JWT-секрета или демо-пользователей.
 
 ## Документация API (Swagger)
 

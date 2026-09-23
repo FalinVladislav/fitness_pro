@@ -1,0 +1,7 @@
+target/
+.idea/
+.git/
+*.iml
+
+# Never package machine-specific database credentials or JWT secrets.
+src/main/resources/application-local.yml

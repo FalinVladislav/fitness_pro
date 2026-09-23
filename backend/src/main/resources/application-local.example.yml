@@ -1,0 +1,11 @@
+# Copy this file to application-local.yml and replace the values if needed.
+# application-local.yml is intentionally ignored by Git.
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fitness_pro
+    username: postgres
+    password: change-me
+
+app:
+  jwt:
+    secret: change-me-to-a-long-local-jwt-secret
